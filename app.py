@@ -4,7 +4,7 @@ import socket
 import time
 from flask import Flask, jsonify
 app = Flask(__name__)
-APP_VERSION = os.environ.get("APP_VERSION", "2.0.0")
+APP_VERSION = os.environ.get("APP_VERSION", "3.0.0")
 # In the legacy world this came from a config file edited by hand on the VM.
 GREETING = os.environ.get("GREETING", "Hello from GitHub Actions")
 # A secret we will later source from Key Vault (never hard-code real secrets):
