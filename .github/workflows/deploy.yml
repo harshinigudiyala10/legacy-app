@@ -30,13 +30,13 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Build Image in ACR
-        run: |
+          run: |
           az acr build \
-            --registry ${{ secrets.ACR_NAME }} \
-            --image legacy-app:${{ github.sha }} \
-            --image legacy-app:latest \
-            --file Dockerfile \
-            .
+      --registry "${{ secrets.ACR_NAME }}" \
+      --image "legacy-app:${{ github.sha }}" \
+      --image "legacy-app:latest" \
+      --file Dockerfile \
+      .
 
       - name: Verify Image in ACR
         run: |
