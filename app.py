@@ -6,7 +6,7 @@ from flask import Flask, jsonify
 app = Flask(__name__)
 APP_VERSION = os.environ.get("APP_VERSION", "4.0.0")
 # In the legacy world this came from a config file edited by hand on the VM.
-GREETING = os.environ.get("GREETING", "Hello")
+GREETING = os.environ.get("GREETING", "Hello World")
 # A secret we will later source from Key Vault (never hard-code real secrets):
 API_TOKEN = os.environ.get("API_TOKEN", "not-set")
 @app.get("/")
