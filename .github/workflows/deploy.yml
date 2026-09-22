@@ -5,13 +5,24 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify application source
+        run: |
+          echo "Commit: ${{ github.sha }}"
+          echo "Files in build directory:"
+          ls -la
+          echo "Checking application message:"
+          grep -n "message" app.py || true
 
       - name: Azure Login
         uses: azure/login@v2
@@ -23,7 +34,16 @@ jobs:
           az acr build \
             --registry ${{ secrets.ACR_NAME }} \
             --image legacy-app:${{ github.sha }} \
-            --image legacy-app:latest .
+            --image legacy-app:latest \
+            --file Dockerfile \
+            .
+
+      - name: Verify Image in ACR
+        run: |
+          az acr repository show \
+            --name ${{ secrets.ACR_NAME }} \
+            --image legacy-app:${{ github.sha }} \
+            --output table
 
       - name: Deploy Container App
         run: |
@@ -32,10 +52,32 @@ jobs:
             --resource-group ${{ secrets.RESOURCE_GROUP }} \
             --image ${{ secrets.ACR_NAME }}.azurecr.io/legacy-app:${{ github.sha }}
 
-      - name: Show URL
+      - name: Verify Deployed Image
         run: |
+          echo "Expected image:"
+          echo "${{ secrets.ACR_NAME }}.azurecr.io/legacy-app:${{ github.sha }}"
+
+          echo "Currently deployed image:"
           az containerapp show \
             --name ${{ secrets.CONTAINER_APP }} \
             --resource-group ${{ secrets.RESOURCE_GROUP }} \
-            --query properties.configuration.ingress.fqdn \
-            -o tsv
+            --query "properties.template.containers[0].image" \
+            --output tsv
+
+      - name: Show Latest Revision
+        run: |
+          az containerapp revision list \
+            --name ${{ secrets.CONTAINER_APP }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --query "sort_by([], &properties.createdTime)[-1].{Revision:name,Active:properties.active,Health:properties.healthState,Created:properties.createdTime}" \
+            --output table
+
+      - name: Show Application URL
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ secrets.CONTAINER_APP }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
+
+          echo "Application URL: https://$FQDN"
